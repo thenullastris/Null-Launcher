@@ -71,16 +71,22 @@ void* hooked_dlopen(const char* path, int mode) {
         shouldUseDyldBypass26PPL = hwRedirectOrig[0] && !DeviceRequiresTXMWorkaround();
     }
     // Only patch Mach-O and use dyld bypass dylib is in the home dir
+    // or tmp dir: LiveContainer makes a symlink to its own tmp dir so checking home dir alone would fail
     const char *home = getenv("HOME");
+    const char *tmp = getenv("TMPDIR");
     char fullpath[PATH_MAX];
-    if (path && realpath(path, fullpath) && strstr(fullpath, home)) {
+    BOOL shouldUseDyldBypass = path && realpath(path, fullpath) && (strstr(fullpath, home) || strstr(fullpath, tmp));
+    shouldUseDyldBypass26PPL &= shouldUseDyldBypass;
+    if (shouldUseDyldBypass) {
         PLPatchMachOPlatformForFile(path);
-    } else {
-        // Disable dyld bypass if not loading from home dir
-        shouldUseDyldBypass26PPL = NO;
     }
     if (shouldUseDyldBypass26PPL) {
         __attribute__((musttail)) return hooked_dlopen_26_ppl(path, mode);
+    } else if (shouldUseDyldBypass) {
+        /// Special case for LiveContainer multitask mode where it hooks dlopen to hook mmap, which will break this dyld bypass, so we redirect calls to the original dlopen.
+        static void *(*sys_dlopen)(const char *, int);
+        if(!sys_dlopen) sys_dlopen = dlsym(RTLD_NEXT, "dlopen");
+        __attribute__((musttail)) return sys_dlopen(path, mode);
     } else {
         __attribute__((musttail)) return orig_dlopen(path, mode);
     }

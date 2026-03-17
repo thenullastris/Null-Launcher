@@ -9,7 +9,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Amethyst</string>
+	<string>Zenith Launcher</string>
 	<key>CFBundleExecutable</key>
 	<string>AngelAuraAmethyst</string>
 	<key>CFBundleIcons</key>
@@ -74,15 +74,15 @@
 		</dict>
 	</dict>
 	<key>CFBundleIdentifier</key>
-	<string>org.angelauramc.amethyst</string>
+	<string>com.reaperzxmc.zenithlauncher</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>AngelAuraAmethyst</string>
+	<string>ZenithLauncher</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -97,7 +97,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>GCSupportedGameControllers</key>
 	<array>
 		<dict>
@@ -128,9 +128,9 @@
 		<string>_altserver._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Angel Aura Amethyst uses the local network to find and communicate with AltServer and LAN servers.</string>
+	<string>Zenith Launcher uses the local network to find and communicate with AltServer and LAN servers.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Angel Aura Amethyst uses the microphone to enable support for voice chat mods.</string>
+	<string>Zenith Launcher uses the microphone to enable support for voice chat mods.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

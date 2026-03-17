@@ -56,9 +56,8 @@
     
     UIImageView *titleView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"AppLogo"]];
     [titleView setContentMode:UIViewContentModeScaleAspectFit];
-    titleView.frame = CGRectMake(0, 0, 200, 36);
     self.navigationItem.titleView = titleView;
-
+    [titleView sizeToFit];
     
     
     self.options = @[

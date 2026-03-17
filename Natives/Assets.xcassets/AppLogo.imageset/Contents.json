@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "AppLogo-Black.png",
       "idiom" : "universal"
     },
     {
@@ -10,6 +11,7 @@
           "value" : "light"
         }
       ],
+      "filename" : "AppLogo-Black-1.png",
       "idiom" : "universal"
     },
     {
@@ -19,6 +21,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "AppLogo-White-1.png",
       "idiom" : "universal"
     }
   ],

@@ -115,17 +115,6 @@
     
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     
-    self.navigationController.toolbarHidden = NO;
-    UIActivityIndicatorViewStyle indicatorStyle = UIActivityIndicatorViewStyleMedium;
-    UIActivityIndicatorView *toolbarIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:indicatorStyle];
-    [toolbarIndicator startAnimating];
-    self.toolbarItems = @[
-        [[UIBarButtonItem alloc] initWithCustomView:toolbarIndicator],
-        [[UIBarButtonItem alloc] init]
-    ];
-    self.toolbarItems[1].tintColor = UIColor.labelColor;
-    
-    // Setup the account button
     self.accountBtnItem = [self drawAccountButton];
     
     [self updateAccountInfo];
@@ -340,11 +329,7 @@
 }
 
 - (void)displayProgress:(NSString *)status {
-    if (status == nil) {
-        [(UIActivityIndicatorView *)self.toolbarItems[0].customView stopAnimating];
-    } else {
-        self.toolbarItems[1].title = status;
-    }
+    // Remove JIT Checker
 }
 
 - (void)enableJITWithAltKit {

@@ -2,27 +2,22 @@
 <plist version="1.0">
 <dict>
     <key>application-identifier</key>
-    <string>org.angelauramc.amethyst</string>
+    <string>com.reaperzxmc.zenithlauncher</string>
     <key>get-task-allow</key>
     <true/>
-
     <key>com.apple.developer.kernel.extended-virtual-addressing</key>
     <true/>
     <key>com.apple.developer.kernel.increased-memory-limit</key>
     <true/>
-
     <!-- iOS may treat Amethyst as system app (if previously installed before under Debian package), which requires these entitlement -->
     <key>com.apple.private.mobileinstall.upgrade-enabled</key>
     <true/>
-
     <!-- Give ability to change Jetsam task limit by itself -->
     <key>com.apple.private.memorystatus</key>
     <true/>
-
     <!-- Disable sandbox so that Amethyst can enable JIT by itself -->
     <key>com.apple.private.security.no-sandbox</key>
     <true/>
-
     <!-- The following entitlements are required if sandbox is disabled -->
     <key>com.apple.private.security.storage.AppDataContainers</key>
     <true/>
@@ -40,6 +35,7 @@
     <array>
         <string>com.apple.nsurlsessiond</string>
         <string>com.apple.nsurlsessiond.NSURLSessionProxyService</string>
+        <string>com.apple.nsurlstorage-cache</string>
         <string>com.apple.nsurlstorage-cache</string>
     </array>
     <key>platform-application</key>

@@ -2,22 +2,17 @@
 <plist version="1.0">
 <dict>
 	<key>application-identifier</key>
-	<string>org.angelauramc.amethyst</string>
-<key>com.apple.private.security.container-required</key>
-	<string>org.angelauramc.amethyst</string>
+	<string>com.reaperzxmc.zenithlauncher</string>
+	<key>com.apple.private.security.container-required</key>
+	<string>com.reaperzxmc.zenithlauncher</string>
     <key>get-task-allow</key>
     <true/>
-
     <key>com.apple.developer.kernel.extended-virtual-addressing</key>
     <true/>
     <key>com.apple.developer.kernel.increased-memory-limit</key>
     <true/>
-
-    <!-- Give ability to change Jetsam task limit by itself -->
     <key>com.apple.private.memorystatus</key>
     <true/>
-
-    <!-- Custom entitlement to indicate this was installed with TrollStore, still sandboxed -->
     <key>jb.pmap_cs_custom_trust</key>
     <string>PMAP_CS_APP_STORE</string>
 </dict>

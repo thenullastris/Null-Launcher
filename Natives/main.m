@@ -101,7 +101,7 @@ bool init_checkForJailbreak() {
 }
 
 void init_logDeviceAndVer(char *argument) {
-    // Amethyst version
+
     NSLog(@"[Pre-Init] Zenith Launcher INIT!");
     NSLog(@"[Pre-Init] Version: %@-%s", NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"], CONFIG_TYPE);
     NSLog(@"[Pre-Init] Commit: %s (%s)", CONFIG_COMMIT, CONFIG_BRANCH);
@@ -310,7 +310,6 @@ int main(int argc, char *argv[]) {
     init_setupAccounts();
     init_setupCustomControls();
 
-    // If sandbox is disabled, W^X JIT can be enabled by Amethyst itself
     if (!isJITEnabled(true) && getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
         NSLog(@"[Pre-init] no-sandbox: YES, trying to enable JIT");
         int pid;

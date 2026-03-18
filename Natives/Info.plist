@@ -89,10 +89,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>org.angelauramc.amethyst.urlscheme</string>
+			<string>com.reaperzxmc.zenithlauncher.urlscheme</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>amethyst</string>
+				<string>zenithlauncher</string>
 			</array>
 		</dict>
 	</array>

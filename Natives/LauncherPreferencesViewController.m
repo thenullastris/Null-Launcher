@@ -431,10 +431,8 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == 0) { // Add to general section
-        return [NSString stringWithFormat:@"Zenith Launcher %@-%s (%s/%s)\n%@ on %@ (%s)\nPID: %d",
-            NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"],
-            CONFIG_TYPE, CONFIG_BRANCH, CONFIG_COMMIT,
-            UIDevice.currentDevice.completeOSVersion, [HostManager GetModelName], getenv("POJAV_DETECTEDINST"), getpid()];
+        return [NSString stringWithFormat:@"Zenith Launcher 2.0-development\niOS: %@ on %@\nPID: %d\nProudly built in Cambodia 🇰🇭\nCreated by ReaperZxMC",
+            [UIDevice currentDevice].systemVersion, [HostManager GetModelName], getpid()];
     }
 
     NSString *footer = NSLocalizedStringWithDefaultValue(([NSString stringWithFormat:@"preference.section.footer.%@", self.prefSections[section]]), @"Localizable", NSBundle.mainBundle, @" ", nil);

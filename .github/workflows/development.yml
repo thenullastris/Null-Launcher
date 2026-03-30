@@ -112,9 +112,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: dev-${{ github.sha }}
-          name: "Zenith Launcher - dev-${{ github.run_number }}"
+          name: "Zenith Launcher V2 - dev-${{ github.run_number }}"
           draft: true
           prerelease: false
+          body: |
+            ## Zenith Launcher V2 — Development Build #${{ github.run_number }}
+
+            > ⚠️ This is an **unofficial development build**. Not ready for public release.
+
+            ### Build Info
+            | | |
+            |---|---|
+            | **Commit** | `${{ github.sha }}` |
+            | **Branch** | `${{ github.ref_name }}` |
+            | **Triggered by** | ${{ github.actor }} |
+            | **Run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
           files: |
             artifacts/com.reaperzxmc.zenithlauncher-*-ios.ipa
             artifacts/com.reaperzxmc.zenithlauncher-*-ios-trollstore.tipa

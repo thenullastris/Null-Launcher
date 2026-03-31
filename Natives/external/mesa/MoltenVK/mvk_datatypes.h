@@ -1,7 +1,7 @@
 /*
  * mvk_datatypes.h
  *
- * Copyright (c) 2015-2021 The Brenwill Workshop Ltd. (http://www.brenwill.com)
+ * Copyright (c) 2015-2025 The Brenwill Workshop Ltd. (http://www.brenwill.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,6 @@
  * limitations under the License.
  */
 
-
-/* 
- * This file contains functions for converting between Vulkan and Metal data types.
- *
- * The functions here are used internally by MoltenVK, and are exposed here 
- * as a convenience for use elsewhere within applications using MoltenVK.
- */
-
 #ifndef __mvkDataTypes_h_
 #define __mvkDataTypes_h_ 1
 
@@ -35,6 +27,14 @@ extern "C" {
 
 #import <Metal/Metal.h>
 #import <CoreGraphics/CoreGraphics.h>
+
+
+/*
+ * This file contains functions for converting between Vulkan and Metal data types.
+ *
+ * The functions here are used internally by MoltenVK, and are exposed here
+ * as a convenience for use elsewhere within applications using MoltenVK.
+ */
 
 
 #pragma mark -
@@ -173,17 +173,17 @@ const char* mvkVkFormatName(VkFormat vkFormat);
 const char* mvkMTLPixelFormatName(MTLPixelFormat mtlFormat);
 
 /**
- * Returns the MTLClearColor value corresponding to the color value in the VkClearValue,
+ * Returns the MTLClearColor value corresponding to the Vulkan color value,
  * extracting the color value that is VkFormat for the VkFormat.
  */
 MTLClearColor mvkMTLClearColorFromVkClearValue(VkClearValue vkClearValue,
 											   VkFormat vkFormat);
 
-/** Returns the Metal depth value corresponding to the depth value in the specified VkClearValue. */
-double mvkMTLClearDepthFromVkClearValue(VkClearValue vkClearValue);
+/** Returns the Metal depth value corresponding to the Vulkan depth value. */
+double mvkMTLClearDepthFromVkClearValue(VkClearDepthStencilValue clearValue);
 
-/** Returns the Metal stencil value corresponding to the stencil value in the specified VkClearValue. */
-uint32_t mvkMTLClearStencilFromVkClearValue(VkClearValue vkClearValue);
+/** Returns the Metal stencil value corresponding to the Vulkan stencil value. */
+uint32_t mvkMTLClearStencilFromVkClearValue(VkClearDepthStencilValue clearValue);
 
 /** Returns whether the specified Metal MTLPixelFormat can be used as a depth format. */
 bool mvkMTLPixelFormatIsDepthFormat(MTLPixelFormat mtlFormat);
@@ -226,6 +226,15 @@ MTLTextureSwizzle mvkMTLTextureSwizzleFromVkComponentSwizzle(VkComponentSwizzle 
 
 /** Returns all four Metal texture swizzles from the Vulkan component mapping. */
 MTLTextureSwizzleChannels mvkMTLTextureSwizzleChannelsFromVkComponentMapping(VkComponentMapping vkMapping);
+
+/** Maps a clear color according to the specified VkComponentSwizzle. */
+float mvkVkClearColorFloatValueFromVkComponentSwizzle(float *colors, uint32_t index, VkComponentSwizzle vkSwizzle);
+
+/** Maps a clear color according to the specified VkComponentSwizzle. */
+uint32_t mvkVkClearColorUIntValueFromVkComponentSwizzle(uint32_t *colors, uint32_t index, VkComponentSwizzle vkSwizzle);
+
+/** Maps a clear color according to the specified VkComponentSwizzle. */
+int32_t mvkVkClearColorIntValueFromVkComponentSwizzle(int32_t *colors, uint32_t index, VkComponentSwizzle vkSwizzle);
 
 
 #pragma mark Mipmaps
@@ -286,19 +295,14 @@ VkExtent3D mvkMipmapBaseSizeFromLevelSize3D(VkExtent3D levelSize, uint32_t level
 
 #pragma mark Samplers
 
-/**
- * Returns the Metal MTLSamplerAddressMode corresponding to the specified Vulkan VkSamplerAddressMode,
- * or returns MTLSamplerAddressModeMirrorClampToEdge if no corresponding MTLSamplerAddressMode exists.
- */
+/** Returns the Metal MTLSamplerAddressMode corresponding to the specified Vulkan VkSamplerAddressMode. */
 MTLSamplerAddressMode mvkMTLSamplerAddressModeFromVkSamplerAddressMode(VkSamplerAddressMode vkMode);
 
-#if MVK_MACOS_OR_IOS 
 /**
  * Returns the Metal MTLSamplerBorderColor corresponding to the specified Vulkan VkBorderColor,
  * or returns MTLSamplerBorderColorTransparentBlack if no corresponding MTLSamplerBorderColor exists.
  */
 MTLSamplerBorderColor mvkMTLSamplerBorderColorFromVkBorderColor(VkBorderColor vkColor);
-#endif
 
 /**
  * Returns the Metal MTLSamplerMinMagFilter corresponding to the specified Vulkan VkFilter,
@@ -323,8 +327,18 @@ typedef enum {
 	kMVKShaderStageTessEval,
 	kMVKShaderStageFragment,
 	kMVKShaderStageCompute,
-	kMVKShaderStageMax
+	kMVKShaderStageCount,
+	kMVKShaderStageMax = kMVKShaderStageCount	// Public API legacy value
 } MVKShaderStage;
+
+typedef enum {
+	kMVKBarrierStageVertex = 0,
+	kMVKBarrierStageFragment,
+	kMVKBarrierStageCompute,
+	kMVKBarrierStageCopy,
+	kMVKBarrierStageNone,
+	kMVKBarrierStageCount = kMVKBarrierStageNone
+} MVKBarrierStage;
 
 /** Returns the Metal MTLColorWriteMask corresponding to the specified Vulkan VkColorComponentFlags. */
 MTLColorWriteMask mvkMTLColorWriteMaskFromVkChannelFlags(VkColorComponentFlags vkWriteFlags);
@@ -334,6 +348,42 @@ MTLBlendOperation mvkMTLBlendOperationFromVkBlendOp(VkBlendOp vkBlendOp);
 
 /** Returns the Metal MTLBlendFactor corresponding to the specified Vulkan VkBlendFactor. */
 MTLBlendFactor mvkMTLBlendFactorFromVkBlendFactor(VkBlendFactor vkBlendFactor);
+
+#if MVK_USE_METAL_PRIVATE_API
+
+// This isn't in any public header yet. Equivalent to D3D11 values.
+typedef NS_ENUM(NSUInteger, MTLLogicOperation) {
+	MTLLogicOperationClear,
+	MTLLogicOperationSet,
+	MTLLogicOperationCopy,
+	MTLLogicOperationCopyInverted,
+	MTLLogicOperationNoop,
+	MTLLogicOperationInvert,
+	MTLLogicOperationAnd,
+	MTLLogicOperationNand,
+	MTLLogicOperationOr,
+	MTLLogicOperationNor,
+	MTLLogicOperationXor,
+	MTLLogicOperationEquivalence,
+	MTLLogicOperationAndReverse,
+	MTLLogicOperationAndInverted,
+	MTLLogicOperationOrReverse,
+	MTLLogicOperationOrInverted,
+};
+
+/** Returns the Metal MTLLogicOperation corresponding to the specified Vulkan VkLogicOp. */
+MTLLogicOperation mvkMTLLogicOperationFromVkLogicOp(VkLogicOp vkBlendOp);
+
+typedef NS_ENUM(NSUInteger, MTLProvokingVertexMode) {
+	MTLProvokingVertexModeFirst,
+	MTLProvokingVertexModeLast,
+	MTLProvokingVertexModeUnknown, // FIXME: Unknown what this value is currently.
+};
+
+/** Returns the Metal MTLProvokingVertexMode corresponding to the specified Vulkan VkProvokingVertexModeEXT. */
+MTLProvokingVertexMode mvkMTLProvokingVertexModeFromVkProvokingVertexMode(VkProvokingVertexModeEXT vkProvokingVertexMode);
+
+#endif
 
 /**
  * Returns the Metal MTLVertexFormat corresponding to the specified
@@ -345,7 +395,7 @@ MTLVertexFormat mvkMTLVertexFormatFromVkFormat(VkFormat vkFormat);
 MTLVertexStepFunction mvkMTLVertexStepFunctionFromVkVertexInputRate(VkVertexInputRate vkVtxStep);
 
 /** Returns the Metal MTLStepFunction corresponding to the specified Vulkan VkVertexInputRate. */
-MTLStepFunction mvkMTLStepFunctionFromVkVertexInputRate(VkVertexInputRate vkVtxStep, bool forTess = false);
+MTLStepFunction mvkMTLStepFunctionFromVkVertexInputRate(VkVertexInputRate vkVtxStep, bool forTess);
 
 /** Returns the Metal MTLPrimitiveType corresponding to the specified Vulkan VkPrimitiveTopology. */
 MTLPrimitiveType mvkMTLPrimitiveTypeFromVkPrimitiveTopology(VkPrimitiveTopology vkTopology);
@@ -360,21 +410,22 @@ MTLTriangleFillMode mvkMTLTriangleFillModeFromVkPolygonMode(VkPolygonMode vkFill
 MTLLoadAction mvkMTLLoadActionFromVkAttachmentLoadOp(VkAttachmentLoadOp vkLoadOp);
 
 /** Returns the Metal MTLStoreAction corresponding to the specified Vulkan VkAttachmentStoreOp. */
-MTLStoreAction mvkMTLStoreActionFromVkAttachmentStoreOp(VkAttachmentStoreOp vkStoreOp, bool hasResolveAttachment);
+MTLStoreAction mvkMTLStoreActionFromVkAttachmentStoreOp(VkAttachmentStoreOp vkStoreOp, bool hasResolveAttachment, bool canResolveFormat);
 
 /** Returns the Metal MTLMultisampleDepthResolveFilter corresponding to the specified Vulkan VkResolveModeFlagBits. */
 MTLMultisampleDepthResolveFilter mvkMTLMultisampleDepthResolveFilterFromVkResolveModeFlagBits(VkResolveModeFlagBits vkResolveMode);
 
-#if MVK_MACOS_OR_IOS
 /** Returns the Metal MTLMultisampleStencilResolveFilter corresponding to the specified Vulkan VkResolveModeFlagBits. */
 MTLMultisampleStencilResolveFilter mvkMTLMultisampleStencilResolveFilterFromVkResolveModeFlagBits(VkResolveModeFlagBits vkResolveMode);
-#endif
 
 /** Returns the Metal MTLViewport corresponding to the specified Vulkan VkViewport. */
 MTLViewport mvkMTLViewportFromVkViewport(VkViewport vkViewport);
 
 /** Returns the Metal MTLScissorRect corresponding to the specified Vulkan VkRect2D. */
 MTLScissorRect mvkMTLScissorRectFromVkRect2D(VkRect2D vkRect);
+
+/** Returns the Vulkan VkRect2D corresponding to the specified  Metal MTLScissorRect. */
+VkRect2D mvkVkRect2DFromMTLScissorRect(MTLScissorRect mtlScissorRect);
 
 /** Returns the Metal MTLCompareFunction corresponding to the specified Vulkan VkCompareOp, */
 MTLCompareFunction mvkMTLCompareFunctionFromVkCompareOp(VkCompareOp vkOp);
@@ -390,6 +441,9 @@ MTLWinding mvkMTLWindingFromVkFrontFace(VkFrontFace vkWinding);
 
 /** Returns the Metal MTLIndexType corresponding to the specified Vulkan VkIndexType, */
 MTLIndexType mvkMTLIndexTypeFromVkIndexType(VkIndexType vkIdxType);
+
+/** Returns the primitive restart index corresponding to the specified Vulkan VkIndexType, */
+uint32_t mvkPrimRestartIndexFromVkIndexType(VkIndexType vkIdxType);
 
 /** Returns the size, in bytes, of a vertex index of the specified type. */
 size_t mvkMTLIndexTypeSizeInBytes(MTLIndexType mtlIdxType);
@@ -407,32 +461,31 @@ MTLWinding mvkMTLWindingFromSpvExecutionMode(uint32_t spvMode);
 MTLTessellationPartitionMode mvkMTLTessellationPartitionModeFromSpvExecutionMode(uint32_t spvMode);
 
 /**
- * Returns the combination of Metal MTLRenderStage bits corresponding to the specified Vulkan VkPiplineStageFlags,
+ * Returns the combination of Metal MTLRenderStage bits corresponding to the specified Vulkan VkPipelineStageFlags2,
  * taking into consideration whether the barrier is to be placed before or after the specified pipeline stages.
  */
-MTLRenderStages mvkMTLRenderStagesFromVkPipelineStageFlags(VkPipelineStageFlags vkStages, bool placeBarrierBefore);
+MTLRenderStages mvkMTLRenderStagesFromVkPipelineStageFlags(VkPipelineStageFlags2 vkStages, bool placeBarrierBefore);
 
-/** Returns the combination of Metal MTLBarrierScope bits corresponding to the specified Vulkan VkAccessFlags. */
-MTLBarrierScope mvkMTLBarrierScopeFromVkAccessFlags(VkAccessFlags vkAccess);
+/** Returns the combination of Metal MTLBarrierScope bits corresponding to the specified Vulkan VkAccessFlags2. */
+MTLBarrierScope mvkMTLBarrierScopeFromVkAccessFlags(VkAccessFlags2 vkAccess);
 
 #pragma mark -
 #pragma mark Geometry conversions
 
-/** Returns a VkExtent2D that corresponds to the specified CGSize. */
-static inline VkExtent2D mvkVkExtent2DFromCGSize(CGSize cgSize) {
-	VkExtent2D vkExt;
-	vkExt.width = cgSize.width;
-	vkExt.height = cgSize.height;
-	return vkExt;
-}
+/**
+ * Returns a VkExtent2D that corresponds to the specified CGSize.
+ * Rounds to nearest integer using half-to-even rounding.
+ */
+VkExtent2D mvkVkExtent2DFromCGSize(CGSize cgSize);
 
 /** Returns a CGSize that corresponds to the specified VkExtent2D. */
-static inline CGSize mvkCGSizeFromVkExtent2D(VkExtent2D vkExtent) {
-	CGSize cgSize;
-	cgSize.width = vkExtent.width;
-	cgSize.height = vkExtent.height;
-	return cgSize;
-}
+CGSize mvkCGSizeFromVkExtent2D(VkExtent2D vkExtent);
+
+/** Returns a CGPoint that corresponds to the specified VkOffset2D. */
+CGPoint mvkCGPointFromVkOffset2D(VkOffset2D vkOffset);
+
+/** Returns a CGRect that corresponds to the specified VkRectLayerKHR. The layer is ignored. */
+CGRect mvkCGRectFromVkRectLayerKHR(VkRectLayerKHR vkRect);
 
 /** Returns a Metal MTLOrigin constructed from a VkOffset3D. */
 static inline MTLOrigin mvkMTLOriginFromVkOffset3D(VkOffset3D vkOffset) {
@@ -440,8 +493,9 @@ static inline MTLOrigin mvkMTLOriginFromVkOffset3D(VkOffset3D vkOffset) {
 }
 
 /** Returns a Vulkan VkOffset3D constructed from a Metal MTLOrigin. */
-static inline VkOffset3D mvkVkOffset3DFromMTLSize(MTLOrigin mtlOrigin) {
-	return { (int32_t)mtlOrigin.x, (int32_t)mtlOrigin.y, (int32_t)mtlOrigin.z };
+static inline VkOffset3D mvkVkOffset3DFromMTLOrigin(MTLOrigin mtlOrigin) {
+	VkOffset3D offset3D = { (int32_t)mtlOrigin.x, (int32_t)mtlOrigin.y, (int32_t)mtlOrigin.z };
+	return offset3D;
 }
 
 /** Returns a Metal MTLSize constructed from a VkExtent3D. */
@@ -451,7 +505,8 @@ static inline MTLSize mvkMTLSizeFromVkExtent3D(VkExtent3D vkExtent) {
 
 /** Returns a Vulkan VkExtent3D  constructed from a Metal MTLSize. */
 static inline VkExtent3D mvkVkExtent3DFromMTLSize(MTLSize mtlSize) {
-	return { (uint32_t)mtlSize.width, (uint32_t)mtlSize.height, (uint32_t)mtlSize.depth };
+	VkExtent3D extent3D = { (uint32_t)mtlSize.width, (uint32_t)mtlSize.height, (uint32_t)mtlSize.depth };
+	return extent3D;
 }
 
 
@@ -469,9 +524,6 @@ static inline VkExtent3D mvkVkExtent3DFromMTLSize(MTLSize mtlSize) {
 
 /** Macro indicating the Vulkan memory type bits corresponding to Metal memoryless memory (not host visible and lazily allocated). */
 #define MVK_VK_MEMORY_TYPE_METAL_MEMORYLESS	(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
-
-/** Returns the Metal storage mode corresponding to the specified Vulkan memory flags. */
-MTLStorageMode mvkMTLStorageModeFromVkMemoryPropertyFlags(VkMemoryPropertyFlags vkFlags);
 
 /** Returns the Metal CPU cache mode corresponding to the specified Vulkan memory flags. */
 MTLCPUCacheMode mvkMTLCPUCacheModeFromVkMemoryPropertyFlags(VkMemoryPropertyFlags vkFlags);

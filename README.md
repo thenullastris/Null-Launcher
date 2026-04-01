@@ -25,8 +25,8 @@ Zenith Launcher is a powerful Minecraft: Java Edition launcher for iOS and iPadO
 ## 📱 Requirements
 
 ### Minimum Requirements
-**iOS 14.0 or later** on:
-- iPhone 6s and later
+**iOS 15.0 or later** on:
+- iPhone 6s Plus and later
 - iPad (5th generation) and later
 - iPad Air (2nd generation) and later
 - iPad mini (4th generation) and later
@@ -34,7 +34,7 @@ Zenith Launcher is a powerful Minecraft: Java Edition launcher for iOS and iPadO
 - iPod touch (7th generation)
 
 ### Recommended Devices
-**iOS 14.0 or later** on:
+**iOS 15.0 or later** on:
 - iPhone XS and later (excluding iPhone XR and iPhone SE 2nd gen)
 - iPad (10th generation) and later
 - iPad Air (4th generation) and later

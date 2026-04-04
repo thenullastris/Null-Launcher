@@ -108,26 +108,11 @@ jobs:
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
           fi
 
-      - name: Create Draft Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload IPA Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: dev-${{ github.sha }}
-          name: "Zenith Launcher V2 - dev-${{ github.run_number }}"
-          draft: true
-          prerelease: false
-          body: |
-            ## Zenith Launcher V2 — Development Build #${{ github.run_number }}
-
-            > ⚠️ This is an **unofficial development build**. Not ready for public release.
-
-            ### Build Info
-            | | |
-            |---|---|
-            | **Commit** | `${{ github.sha }}` |
-            | **Branch** | `${{ github.ref_name }}` |
-            | **Triggered by** | ${{ github.actor }} |
-            | **Run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
-          files: |
+          name: ZenithLauncher-dev-${{ github.run_number }}
+          path: |
             artifacts/com.reaperzxmc.zenithlauncher-*-ios.ipa
             artifacts/com.reaperzxmc.zenithlauncher-*-ios-trollstore.tipa
             artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios.ipa

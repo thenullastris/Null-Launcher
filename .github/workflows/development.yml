@@ -108,12 +108,26 @@ jobs:
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
           fi
 
-      - name: Upload IPA Artifacts
+      - name: Upload IPA (AltStore/SideStore)
         uses: actions/upload-artifact@v4
         with:
-          name: ZenithLauncher-dev-${{ github.run_number }}
-          path: |
-            artifacts/com.reaperzxmc.zenithlauncher-*-ios.ipa
-            artifacts/com.reaperzxmc.zenithlauncher-*-ios-trollstore.tipa
-            artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios.ipa
-            artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios-trollstore.tipa
+          name: ZenithLauncher-${{ github.run_number }}-ios
+          path: artifacts/com.reaperzxmc.zenithlauncher-*-ios.ipa
+
+      - name: Upload TIPA (TrollStore)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZenithLauncher-${{ github.run_number }}-ios-trollstore
+          path: artifacts/com.reaperzxmc.zenithlauncher-*-ios-trollstore.tipa
+
+      - name: Upload Slimmed IPA (AltStore/SideStore)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZenithLauncher-${{ github.run_number }}-ios-slimmed
+          path: artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios.ipa
+
+      - name: Upload Slimmed TIPA (TrollStore)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZenithLauncher-${{ github.run_number }}-ios-slimmed-trollstore
+          path: artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios-trollstore.tipa

@@ -108,26 +108,23 @@ jobs:
             gmake -j$(sysctl -n hw.ncpu) dsym package PLATFORM=${{ matrix.platform }}
           fi
 
-      - name: Upload IPA (AltStore/SideStore)
-        uses: actions/upload-artifact@v4
+      - name: Upload regular ipa
+        uses: actions/upload-artifact@main
         with:
-          name: ZenithLauncher-${{ github.run_number }}-ios
-          path: artifacts/com.reaperzxmc.zenithlauncher-*-ios.ipa
-
-      - name: Upload TIPA (TrollStore)
-        uses: actions/upload-artifact@v4
+          name: com.reaperzxmc.zenithlauncher-${{ matrix.platform_name }}.ipa
+          path: artifacts/com.reaperzxmc.zenithlauncher-*-${{ matrix.platform_name }}.ipa
+      - name: Upload regular tipa
+        uses: actions/upload-artifact@main
         with:
-          name: ZenithLauncher-${{ github.run_number }}-ios-trollstore
-          path: artifacts/com.reaperzxmc.zenithlauncher-*-ios-trollstore.tipa
-
-      - name: Upload Slimmed IPA (AltStore/SideStore)
-        uses: actions/upload-artifact@v4
+          name: com.reaperzxmc.zenithlauncher-${{ matrix.platform_name }}-trollstore.tipa
+          path: artifacts/com.reaperzxmc.zenithlauncher-*-${{ matrix.platform_name }}-trollstore.tipa
+      - name: Upload slimmed ipa
+        uses: actions/upload-artifact@main
         with:
-          name: ZenithLauncher-${{ github.run_number }}-ios-slimmed
-          path: artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios.ipa
-
-      - name: Upload Slimmed TIPA (TrollStore)
-        uses: actions/upload-artifact@v4
+          name: com.reaperzxmc.zenithlauncher.slimmed-${{ matrix.platform_name }}.ipa
+          path: artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-${{ matrix.platform_name }}.ipa
+      - name: Upload slimmed tipa
+        uses: actions/upload-artifact@main
         with:
-          name: ZenithLauncher-${{ github.run_number }}-ios-slimmed-trollstore
-          path: artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-ios-trollstore.tipa
+          name: com.reaperzxmc.zenithlauncher.slimmed-${{ matrix.platform_name }}-trollstore.tipa
+          path: artifacts/com.reaperzxmc.zenithlauncher.slimmed-*-${{ matrix.platform_name }}-trollstore.tipa

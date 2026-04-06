@@ -1,6 +1,6 @@
 # ⚡ Zenith Launcher
 
-**រកដល់កំពូលនៃ Minecraft លើទូរស័ព្ទ**
+**Minecraft Java Edition នៅលើiPhone**
 
 [![Development build](https://github.com/drevenant-7/Zenith-Launcher/actions/workflows/development.yml/badge.svg?branch=main)](https://github.com/drevenant-7/Zenith-Launcher/actions/workflows/development.yml)
 

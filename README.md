@@ -1,3 +1,4 @@
+[🇰🇭 អានជាភាសាខ្មែរ](khmer.md)
 # ⚡ Zenith Launcher
 
 **Reach the peak of mobile Minecraft**

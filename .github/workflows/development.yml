@@ -1,13 +1,6 @@
 name: Development build
 
 on:
-  pull_request:
-    branches-ignore:
-      - 'l10n_main'
-    types: [opened, reopened]
-  push:
-    branches-ignore:
-      - 'l10n_main'
   workflow_dispatch:
 
 jobs:

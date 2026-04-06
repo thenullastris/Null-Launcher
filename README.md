@@ -1,4 +1,4 @@
-[🇰🇭 អានជាភាសាខ្មែរ](khmer.md)
+[ចុចទីនេះដើម្បីអានជាភាសាខ្មែរ 🇰🇭](khmer.md)
 # ⚡ Zenith Launcher
 
 **Reach the peak of mobile Minecraft**

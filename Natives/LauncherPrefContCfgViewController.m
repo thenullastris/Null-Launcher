@@ -118,7 +118,7 @@ typedef void(^CreateView)(UITableViewCell *, NSString *, NSDictionary *);
     } else if(indexPath.section == 1 || indexPath.section == 2) {
         NSNumber *keycode = (NSNumber *)item[@"keycode"];
         cell.textLabel.text = localize(([NSString stringWithFormat:@"controller_configurator.%@.title.%@", getPrefObject(@"control.controller_type"), item[@"name"]]), nil);
-        UITextField *view = (id)cell.accessoryView;
+        PickTextField *view = (id)cell.accessoryView;
         if (view == nil) {
             view = [[PickTextField alloc] initWithFrame:CGRectMake(0, 0, cell.bounds.size.width / 2.1, cell.bounds.size.height)];
             [view addTarget:view action:@selector(resignFirstResponder) forControlEvents:UIControlEventEditingDidEndOnExit];
@@ -132,6 +132,7 @@ typedef void(^CreateView)(UITableViewCell *, NSString *, NSDictionary *);
             view.tintColor = UIColor.clearColor;
             view.adjustsFontSizeToFitWidth = YES;
             view.inputView = self.editPickMapping;
+            [view setupDoneButtonWithTarget:self action:@selector(closeTextField:)];
             cell.accessoryView = view;
         }
         view.text = self.keyCodeMap[[self.keyValueMap indexOfObject:keycode]];

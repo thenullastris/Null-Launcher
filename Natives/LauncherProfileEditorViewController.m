@@ -12,7 +12,7 @@
 @property(nonatomic) NSString* oldName;
 
 @property(nonatomic) NSArray<NSDictionary *> *versionList;
-@property(nonatomic) UITextField* versionTextField;
+@property(nonatomic) PickTextField* versionTextField;
 @property(nonatomic) UISegmentedControl* versionTypeControl;
 @property(nonatomic) UIPickerView* versionPickerView;
 @property(nonatomic) UIToolbar* versionPickerToolbar;
@@ -64,7 +64,7 @@
     [self setupVersionPicker];
     id typeVersionPicker = ^void(UITableViewCell *cell, NSString *section, NSString *key, NSDictionary *item){
         self.typeTextField(cell, section, key, item);
-        UITextField *textField = (id)cell.accessoryView;
+        PickTextField *textField = (id)cell.accessoryView;
         weakSelf.versionTextField = textField;
         textField.inputAccessoryView = weakSelf.versionPickerToolbar;
         textField.inputView = weakSelf.versionPickerView;

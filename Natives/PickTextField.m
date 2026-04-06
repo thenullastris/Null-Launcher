@@ -33,7 +33,7 @@
 @end
 
 @interface PickTextField()
-@property(nonatomic) PickViewController *vc;
+@@property(nonatomic) UIButton *doneButton;
 @end
 
 @implementation PickTextField
@@ -49,11 +49,25 @@
 - (NSArray *)selectionRectsForRange:(UITextRange *)range {
     return nil;
 }
+-(BOOL)prefersPopoverPresentation {
+    BOOL hasLiquidGlass = _UISolariumEnabled && _UISolariumEnabled();
+    return hasLiquidGlass || NSProcessInfo.processInfo.isMacCatalystApp;
+}
 
+- (void)setupDoneButtonWithTarget:(id)target action:(SEL)action {
+    UIToolbar *toolbar = (id)self.inputAccessoryView;
+    if (!toolbar) {
+        UIBarButtonItem *btnFlexibleSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+        toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0.0, 0.0, self.frame.size.width, 44.0)];
+        toolbar.items = @[btnFlexibleSpace];
+        self.inputAccessoryView = toolbar;
+    }
+    UIBarButtonItem *editDoneButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:target action:action];
+    toolbar.items = [toolbar.items arrayByAddingObject:editDoneButton];
+}
 - (BOOL)becomeFirstResponder {
     // iOS 26 uses popover aswell
-    BOOL hasLiquidGlass = _UISolariumEnabled && _UISolariumEnabled();
-    if (!hasLiquidGlass && !NSProcessInfo.processInfo.isMacCatalystApp) {
+    if (!self.prefersPopoverPresentation) {
         return [super becomeFirstResponder];
     }
 

@@ -32,7 +32,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 @property(nonatomic) UINavigationController* progressVC;
 @property(nonatomic) NSArray* globalToolbarItems;
 @property(nonatomic) PLPickerView* versionPickerView;
-@property(nonatomic) UITextField* versionTextField;
+@property(nonatomic) PickTextField* versionTextField;
 @property(nonatomic) UIButton* buttonInstall;
 @property(nonatomic) UIBarButtonItem* buttonInstallItem;
 @property(nonatomic) int profileSelectedAt;
@@ -75,7 +75,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     [self reloadProfileList];
 
     self.versionTextField.inputView = self.versionPickerView;
-
+    [self.versionTextField setupDoneButtonWithTarget:self action:@selector(versionClosePicker)];
     UIView *textFieldContainer = nil;
     if(hasLiquidGlass) {
         textFieldContainer = [[UIView alloc] initWithFrame:self.versionTextField.frame];

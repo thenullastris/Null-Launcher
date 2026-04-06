@@ -105,7 +105,7 @@ Zenith Launcher is built upon the excellent work of many developers:
 - @Mathius-Boulay  
 - @jkcoxson  
 - @Diatrus  
-- @drevenant-7
+- @ReaperZxMC - Zenith Launcher Builder
 
 ---
 

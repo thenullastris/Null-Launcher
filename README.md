@@ -9,7 +9,7 @@
 
 ## 🎮 What is Zenith Launcher?
 
-Zenith Launcher is a powerful Minecraft: Java Edition launcher for iOS and iPadOS, built on the modern Amethyst foundation with custom ReaperZxMC design and enhancements.
+Zenith Launcher is a powerful Minecraft: Java Edition launcher for iOS and iPadOS, built on the modern Amethyst foundation with custom TheNullAstris design and enhancements.
 
 ### ✨ Features
 
@@ -105,7 +105,7 @@ Zenith Launcher is built upon the excellent work of many developers:
 - @Mathius-Boulay  
 - @jkcoxson  
 - @Diatrus  
-- @ReaperZxMC - Zenith Launcher Builder
+- @TheNullAstris - Zenith Launcher Builder
 
 ---
 

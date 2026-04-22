@@ -2,9 +2,9 @@
 <plist version="1.0">
 <dict>
 	<key>application-identifier</key>
-	<string>com.reaperzxmc.zenithlauncher</string>
+	<string>com.thenullastris.zenithlauncher</string>
 	<key>com.apple.private.security.container-required</key>
-	<string>com.reaperzxmc.zenithlauncher</string>
+	<string>com.thenullastris.zenithlauncher</string>
     <key>get-task-allow</key>
     <true/>
     <key>com.apple.developer.kernel.extended-virtual-addressing</key>

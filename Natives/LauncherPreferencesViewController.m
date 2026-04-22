@@ -431,7 +431,7 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == 0) { // Add to general section
-        return [NSString stringWithFormat:@"Zenith Launcher 2.0-development\niOS: %@ on %@\nPID: %d\nProudly built in Cambodia 🇰🇭\nCreated by ReaperZxMC",
+        return [NSString stringWithFormat:@"Zenith Launcher 2.0-development\niOS: %@ on %@\nPID: %d\nCreated by TheNullAstris",
             [UIDevice currentDevice].systemVersion, [HostManager GetModelName], getpid()];
     }
 

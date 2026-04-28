@@ -1,6 +1,6 @@
 #import "ElyByAuthenticator.h"
-#import "../AFNetworking.h"
-#import "../ios_uikit_bridge.h"
+#import "AFNetworking.h"
+#import "ios_uikit_bridge.h"
 
 @implementation ElyByAuthenticator
 

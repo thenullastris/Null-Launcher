@@ -105,6 +105,7 @@ add_executable(AngelAuraAmethyst
   authenticator/BaseAuthenticator.m
   authenticator/LocalAuthenticator.m
   authenticator/MicrosoftAuthenticator.m
+  authenticator/ElyByAuthenticator.m
 
   ctxbridges/gl_bridge.m
   ctxbridges/osm_bridge.m
@@ -143,7 +144,6 @@ add_executable(AngelAuraAmethyst
   DownloadProgressViewController.m
   FileListViewController.m
   GameSurfaceView.m
-  ElyByAuthenticator.m
   JavaGUIViewController.m
   LauncherMenuViewController.m
   LauncherNavigationController.m

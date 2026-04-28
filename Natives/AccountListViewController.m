@@ -1,3 +1,4 @@
+#import "authenticator/ElyByAuthenticator.h"
 #import <AuthenticationServices/AuthenticationServices.h>
 
 #import "authenticator/BaseAuthenticator.h"
@@ -150,6 +151,12 @@
         [self actionLoginLocal:sender];
     }];
     [picker addAction:actionLocal];
+    UIAlertAction *actionElyBy = [UIAlertAction actionWithTitle:@"Ely.by" 
+    style:UIAlertActionStyleDefault 
+    handler:^(UIAlertAction *action) {
+        [self actionLoginElyBy:sender];
+    }];
+    [picker addAction:actionElyBy];
     UIAlertAction *cancel = [UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:nil];
     [picker addAction:cancel];
 
@@ -159,6 +166,98 @@
     [self presentViewController:picker animated:YES completion:nil];
 }
 
+- (void)actionLoginElyBy:(UIView *)sender {
+    UIAlertController *controller = [UIAlertController 
+        alertControllerWithTitle:@"Ely.by"
+        message:localize(@"Sign in", nil)
+        preferredStyle:UIAlertControllerStyleAlert];
+    
+    [controller addTextFieldWithConfigurationHandler:^(UITextField *tf) {
+        tf.placeholder = @"Email";
+        tf.keyboardType = UIKeyboardTypeEmailAddress;
+        tf.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    }];
+    [controller addTextFieldWithConfigurationHandler:^(UITextField *tf) {
+        tf.placeholder = localize(@"login.alert.field.password", nil);
+        tf.secureTextEntry = YES;
+    }];
+    
+    [controller addAction:[UIAlertAction actionWithTitle:localize(@"OK", nil)
+        style:UIAlertActionStyleDefault
+        handler:^(UIAlertAction *action) {
+            NSString *email = controller.textFields[0].text;
+            NSString *password = controller.textFields[1].text;
+            
+            if (email.length == 0 || password.length == 0) {
+                showDialog(localize(@"Error", nil), @"Email and password are required.");
+                return;
+            }
+            
+            ElyByAuthenticator *auth = [[ElyByAuthenticator alloc] initWithInput:@""];
+            auth.authData[@"input_email"] = email;
+            auth.authData[@"input_password"] = password;
+            
+            id callback = ^(id status, BOOL success) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (success) {
+                        self.whenItemSelected();
+                        [self dismissViewControllerAnimated:YES completion:nil];
+                    } else if ([status isEqualToString:@"2FA_REQUIRED"]) {
+                        // Ask for 2FA code
+                        [self actionLoginElyBy2FA:email password:password];
+                    } else if (status != nil) {
+                        showDialog(localize(@"Error", nil), status);
+                    }
+                });
+            };
+            [auth loginWithCallback:callback];
+        }]];
+    
+    [controller addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil)
+        style:UIAlertActionStyleCancel handler:nil]];
+    
+    [self presentViewController:controller animated:YES completion:nil];
+}
+
+- (void)actionLoginElyBy2FA:(NSString *)email password:(NSString *)password {
+    UIAlertController *controller = [UIAlertController
+        alertControllerWithTitle:@"Two-Factor Auth"
+        message:@"Enter your TOTP code"
+        preferredStyle:UIAlertControllerStyleAlert];
+    
+    [controller addTextFieldWithConfigurationHandler:^(UITextField *tf) {
+        tf.placeholder = @"123456";
+        tf.keyboardType = UIKeyboardTypeNumberPad;
+    }];
+    
+    [controller addAction:[UIAlertAction actionWithTitle:localize(@"OK", nil)
+        style:UIAlertActionStyleDefault
+        handler:^(UIAlertAction *action) {
+            NSString *totp = controller.textFields[0].text;
+            NSString *passwordWithToken = [NSString stringWithFormat:@"%@:%@", password, totp];
+            
+            ElyByAuthenticator *auth = [[ElyByAuthenticator alloc] initWithInput:@""];
+            auth.authData[@"input_email"] = email;
+            auth.authData[@"input_password"] = passwordWithToken;
+            
+            id callback = ^(id status, BOOL success) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (success) {
+                        self.whenItemSelected();
+                        [self dismissViewControllerAnimated:YES completion:nil];
+                    } else {
+                        showDialog(localize(@"Error", nil), status ?: @"Login failed.");
+                    }
+                });
+            };
+            [auth loginWithCallback:callback];
+        }]];
+    
+    [controller addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil)
+        style:UIAlertActionStyleCancel handler:nil]];
+    
+    [self presentViewController:controller animated:YES completion:nil];
+}
 - (void)actionLoginLocal:(UIView *)sender {
     if (getPrefBool(@"warnings.local_warn")) {
         setPrefBool(@"warnings.local_warn", NO);

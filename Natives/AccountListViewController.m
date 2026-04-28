@@ -69,6 +69,9 @@
         // Remove the prefix "Demo."
         cell.textLabel.text = [selected[@"username"] substringFromIndex:5];
         cell.detailTextLabel.text = localize(@"login.option.demo", nil);
+    } else if ([selected[@"type"] isEqualToString:@"ely.by"]) {
+    cell.detailTextLabel.text = @"Ely.by";
+    } else if (selected[@"xboxGamertag"] == nil) {
     } else if (selected[@"xboxGamertag"] == nil) {
         cell.detailTextLabel.text = localize(@"login.option.local", nil);
     } else {

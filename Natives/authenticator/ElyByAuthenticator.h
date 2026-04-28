@@ -1,4 +1,4 @@
-#import "authenticator/BaseAuthenticator.h"
+#import "BaseAuthenticator.h"
 
 @interface ElyByAuthenticator : BaseAuthenticator
 @end

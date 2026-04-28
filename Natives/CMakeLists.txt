@@ -143,6 +143,7 @@ add_executable(AngelAuraAmethyst
   DownloadProgressViewController.m
   FileListViewController.m
   GameSurfaceView.m
+  ElyByAuthenticator.m
   JavaGUIViewController.m
   LauncherMenuViewController.m
   LauncherNavigationController.m

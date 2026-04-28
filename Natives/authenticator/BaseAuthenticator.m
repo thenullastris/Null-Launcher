@@ -28,7 +28,9 @@ static BaseAuthenticator *current = nil;
         }
         return nil;
     }
-
+    if ([authData[@"type"] isEqualToString:@"ely.by"]) {
+        return [[ElyByAuthenticator alloc] initWithData:authData];
+    }
     if ([authData[@"expiresAt"] longValue] == 0) {
         return [[LocalAuthenticator alloc] initWithData:authData];
     } else { 

@@ -1,5 +1,6 @@
 #import <Security/Security.h>
 #import "BaseAuthenticator.h"
+#import "ElyByAuthenticator.h"
 #import "../LauncherPreferences.h"
 #import "../ios_uikit_bridge.h"
 #import "../utils.h"

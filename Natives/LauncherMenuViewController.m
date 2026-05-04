@@ -269,7 +269,7 @@
 - (void)tickWaveform:(CADisplayLink *)link {
     if (!self.waveformAnimating) return;
     CFTimeInterval t = link.timestamp * 3.5;
-    CGFloat phases[] = {0.0, 0.5, 1.0, 1.5, 2.0};
+    static const CGFloat phases[5] = {0.0, 0.5, 1.0, 1.5, 2.0};
     CGFloat minH = 3.0, maxH = 18.0;
     [self.waveformBars enumerateObjectsUsingBlock:^(UIView *bar, NSUInteger i, BOOL *stop) {
         CGFloat h = minH + (maxH - minH) * (0.5 + 0.5 * sin(t + phases[i]));

@@ -31,7 +31,6 @@
     LauncherMenuCustomItem *item = [[LauncherMenuCustomItem alloc] init];
     item.title = [vc title];
     item.imageName = [vc imageName];
-    // View controllers are put into an array to keep its state
     item.vcArray = @[vc];
     return item;
 }
@@ -42,6 +41,16 @@
 @property(nonatomic) NSMutableArray<LauncherMenuCustomItem*> *options;
 @property(nonatomic) UILabel *statusLabel;
 @property(nonatomic) int lastSelectedIndex;
+
+// JIT status UI
+@property(nonatomic) UIView *jitStatusView;
+@property(nonatomic) UIView *waveformContainer;
+@property(nonatomic) UIView *successDot;
+@property(nonatomic) UIView *failDot;
+@property(nonatomic) UILabel *jitStatusLabel;
+@property(nonatomic) NSArray<UIView *> *waveformBars;
+@property(nonatomic) BOOL waveformAnimating;
+@property(nonatomic) CADisplayLink *displayLink;
 @end
 
 @implementation LauncherMenuViewController
@@ -57,7 +66,6 @@
     [titleView setContentMode:UIViewContentModeScaleAspectFit];
     self.navigationItem.titleView = titleView;
     [titleView sizeToFit];
-    
     
     self.options = @[
         [LauncherMenuCustomItem vcClass:LauncherProfilesViewController.class],
@@ -77,7 +85,6 @@
         [contentNavigationController performSelector:@selector(enterModInstaller)];
     }]];
     
-    // TODO: Finish log-uploading service integration
     [self.options addObject:
      (id)[LauncherMenuCustomItem
           title:localize(@"login.menu.sendlogs", nil)
@@ -127,15 +134,13 @@
         [self displayProgress:localize(@"login.jit.checking", nil)];
         if (isJITEnabled(false)) {
             [self displayProgress:localize(@"login.jit.enabled", nil)];
-            [self displayProgress:nil];
         } else if (@available(iOS 17.0, *)) {
-            // enabling JIT for 17.0+ is done when we actually launch the game
+            // JIT for 17.0+ is enabled when the game actually launches
         } else {
             [self enableJITWithAltKit];
         }
     } else if (!NSProcessInfo.processInfo.macCatalystApp && !getenv("SIMULATOR_DEVICE_NAME")) {
         [self displayProgress:localize(@"login.jit.fail", nil)];
-        [self displayProgress:nil];
         UIAlertController* alert = [UIAlertController alertControllerWithTitle:localize(@"login.jit.fail.title", nil)
             message:localize(@"login.jit.fail.description_unsupported", nil)
             preferredStyle:UIAlertControllerStyleAlert];
@@ -152,36 +157,213 @@
     [self restoreHighlightedSelection];
 }
 
+#pragma mark - JIT Status UI
+
+- (void)setupJITStatusView {
+    // Container pinned to bottom of sidebar, above safe area
+    self.jitStatusView = [[UIView alloc] init];
+    self.jitStatusView.translatesAutoresizingMaskIntoConstraints = NO;
+    self.jitStatusView.alpha = 0;
+    [self.view addSubview:self.jitStatusView];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.jitStatusView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [self.jitStatusView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [self.jitStatusView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor],
+        [self.jitStatusView.heightAnchor constraintEqualToConstant:48],
+    ]];
+
+    // Top separator
+    UIView *separator = [[UIView alloc] init];
+    separator.translatesAutoresizingMaskIntoConstraints = NO;
+    separator.backgroundColor = [UIColor separatorColor];
+    [self.jitStatusView addSubview:separator];
+    [NSLayoutConstraint activateConstraints:@[
+        [separator.topAnchor constraintEqualToAnchor:self.jitStatusView.topAnchor],
+        [separator.leadingAnchor constraintEqualToAnchor:self.jitStatusView.leadingAnchor],
+        [separator.trailingAnchor constraintEqualToAnchor:self.jitStatusView.trailingAnchor],
+        [separator.heightAnchor constraintEqualToConstant:0.5],
+    ]];
+
+    // Waveform container
+    self.waveformContainer = [[UIView alloc] init];
+    self.waveformContainer.translatesAutoresizingMaskIntoConstraints = NO;
+    self.waveformContainer.clipsToBounds = NO;
+    [self.jitStatusView addSubview:self.waveformContainer];
+
+    int barCount = 5;
+    CGFloat barWidth = 3.0;
+    CGFloat spacing = 3.0;
+    CGFloat totalWidth = barCount * barWidth + (barCount - 1) * spacing;
+
+    NSMutableArray *bars = [NSMutableArray array];
+    for (int i = 0; i < barCount; i++) {
+        UIView *bar = [[UIView alloc] init];
+        bar.translatesAutoresizingMaskIntoConstraints = NO;
+        bar.backgroundColor = [UIColor colorWithRed:220/255.0 green:38/255.0 blue:38/255.0 alpha:1.0];
+        bar.layer.cornerRadius = barWidth / 2.0;
+        [self.waveformContainer addSubview:bar];
+        [NSLayoutConstraint activateConstraints:@[
+            [bar.widthAnchor constraintEqualToConstant:barWidth],
+            [bar.heightAnchor constraintEqualToConstant:4],
+            [bar.centerYAnchor constraintEqualToAnchor:self.waveformContainer.centerYAnchor],
+            [bar.leadingAnchor constraintEqualToAnchor:self.waveformContainer.leadingAnchor
+                                              constant:i * (barWidth + spacing)],
+        ]];
+        [bars addObject:bar];
+    }
+    self.waveformBars = bars;
+
+    // Success dot (green)
+    self.successDot = [[UIView alloc] init];
+    self.successDot.translatesAutoresizingMaskIntoConstraints = NO;
+    self.successDot.backgroundColor = [UIColor systemGreenColor];
+    self.successDot.layer.cornerRadius = 4;
+    self.successDot.hidden = YES;
+    [self.jitStatusView addSubview:self.successDot];
+
+    // Fail dot (red)
+    self.failDot = [[UIView alloc] init];
+    self.failDot.translatesAutoresizingMaskIntoConstraints = NO;
+    self.failDot.backgroundColor = [UIColor colorWithRed:220/255.0 green:38/255.0 blue:38/255.0 alpha:1.0];
+    self.failDot.layer.cornerRadius = 4;
+    self.failDot.hidden = YES;
+    [self.jitStatusView addSubview:self.failDot];
+
+    // Status label
+    self.jitStatusLabel = [[UILabel alloc] init];
+    self.jitStatusLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    self.jitStatusLabel.font = [UIFont systemFontOfSize:12 weight:UIFontWeightMedium];
+    self.jitStatusLabel.textColor = [UIColor secondaryLabelColor];
+    [self.jitStatusView addSubview:self.jitStatusLabel];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.waveformContainer.centerYAnchor constraintEqualToAnchor:self.jitStatusView.centerYAnchor],
+        [self.waveformContainer.leadingAnchor constraintEqualToAnchor:self.jitStatusView.leadingAnchor constant:16],
+        [self.waveformContainer.widthAnchor constraintEqualToConstant:totalWidth],
+        [self.waveformContainer.heightAnchor constraintEqualToConstant:20],
+
+        [self.successDot.centerYAnchor constraintEqualToAnchor:self.jitStatusView.centerYAnchor],
+        [self.successDot.leadingAnchor constraintEqualToAnchor:self.jitStatusView.leadingAnchor constant:16],
+        [self.successDot.widthAnchor constraintEqualToConstant:8],
+        [self.successDot.heightAnchor constraintEqualToConstant:8],
+
+        [self.failDot.centerYAnchor constraintEqualToAnchor:self.jitStatusView.centerYAnchor],
+        [self.failDot.leadingAnchor constraintEqualToAnchor:self.jitStatusView.leadingAnchor constant:16],
+        [self.failDot.widthAnchor constraintEqualToConstant:8],
+        [self.failDot.heightAnchor constraintEqualToConstant:8],
+
+        [self.jitStatusLabel.centerYAnchor constraintEqualToAnchor:self.jitStatusView.centerYAnchor],
+        [self.jitStatusLabel.leadingAnchor constraintEqualToAnchor:self.jitStatusView.leadingAnchor constant:34],
+        [self.jitStatusLabel.trailingAnchor constraintEqualToAnchor:self.jitStatusView.trailingAnchor constant:-16],
+    ]];
+}
+
+- (void)startWaveformAnimation {
+    self.waveformAnimating = YES;
+    [self.displayLink invalidate];
+    self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(tickWaveform:)];
+    [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
+}
+
+- (void)tickWaveform:(CADisplayLink *)link {
+    if (!self.waveformAnimating) return;
+    CFTimeInterval t = link.timestamp * 3.5;
+    CGFloat phases[] = {0.0, 0.5, 1.0, 1.5, 2.0};
+    CGFloat minH = 3.0, maxH = 18.0;
+    [self.waveformBars enumerateObjectsUsingBlock:^(UIView *bar, NSUInteger i, BOOL *stop) {
+        CGFloat h = minH + (maxH - minH) * (0.5 + 0.5 * sin(t + phases[i]));
+        CGRect f = bar.frame;
+        f.size.height = h;
+        f.origin.y = (20.0 - h) / 2.0;
+        bar.frame = f;
+    }];
+}
+
+- (void)stopWaveformAnimation {
+    self.waveformAnimating = NO;
+    [self.displayLink invalidate];
+    self.displayLink = nil;
+    // Collapse bars smoothly
+    [UIView animateWithDuration:0.25 animations:^{
+        [self.waveformBars enumerateObjectsUsingBlock:^(UIView *bar, NSUInteger i, BOOL *stop) {
+            CGRect f = bar.frame;
+            f.size.height = 3.0;
+            f.origin.y = 8.5;
+            bar.frame = f;
+        }];
+    }];
+}
+
+- (void)displayProgress:(NSString *)status {
+    if (!self.jitStatusView) {
+        [self setupJITStatusView];
+    }
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (status == nil) return;
+
+        self.jitStatusLabel.text = status;
+        [UIView animateWithDuration:0.3 animations:^{
+            self.jitStatusView.alpha = 1;
+        }];
+
+        NSString *checking = localize(@"login.jit.checking", nil);
+        NSString *enabled  = localize(@"login.jit.enabled", nil);
+
+        if ([status isEqualToString:checking]) {
+            // Pulse waveform indefinitely
+            self.successDot.hidden = YES;
+            self.failDot.hidden = YES;
+            self.waveformContainer.hidden = NO;
+            self.jitStatusLabel.textColor = [UIColor secondaryLabelColor];
+            if (!self.waveformAnimating) [self startWaveformAnimation];
+        } else if ([status isEqualToString:enabled]) {
+            // Green dot
+            [self stopWaveformAnimation];
+            self.waveformContainer.hidden = YES;
+            self.failDot.hidden = YES;
+            self.successDot.hidden = NO;
+            self.jitStatusLabel.textColor = [UIColor systemGreenColor];
+        } else {
+            // JIT unavailable / fail
+            [self stopWaveformAnimation];
+            self.waveformContainer.hidden = YES;
+            self.successDot.hidden = YES;
+            self.failDot.hidden = NO;
+            self.jitStatusLabel.textColor = [UIColor colorWithRed:220/255.0 green:38/255.0 blue:38/255.0 alpha:1.0];
+        }
+    });
+}
+
+#pragma mark - Account Button
+
 - (UIBarButtonItem *)drawAccountButton {
     if (!self.accountBtnItem) {
         self.accountButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [self.accountButton addTarget:self action:@selector(selectAccount:) forControlEvents:UIControlEventPrimaryActionTriggered];
         self.accountButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
-
         self.accountButton.titleEdgeInsets = UIEdgeInsetsMake(0, 4, 0, -4);
         self.accountButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         self.accountButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
         self.accountBtnItem = [[UIBarButtonItem alloc] initWithCustomView:self.accountButton];
     }
-
     [self updateAccountInfo];
-    
     return self.accountBtnItem;
 }
 
 - (void)restoreHighlightedSelection {
-    // Restore the selected row when the view appears again
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.lastSelectedIndex inSection:0];
     [self.tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionNone];
 }
 
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
-{
+#pragma mark - Table View
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     return self.options.count;
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
     if (cell == nil) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
@@ -210,8 +392,7 @@
     return cell;
 }
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     LauncherMenuCustomItem *selected = self.options[indexPath.row];
     
     if (selected.action != nil) {
@@ -231,6 +412,8 @@
     }
 }
 
+#pragma mark - Account Selection
+
 - (void)selectAccount:(UIButton *)sender {
     AccountListViewController *vc = [[AccountListViewController alloc] init];
     vc.whenDelete = ^void(NSString* name) {
@@ -244,7 +427,6 @@
         setPrefObject(@"internal.selected_account", BaseAuthenticator.current.authData[@"username"]);
         [self updateAccountInfo];
         if (sender != self.accountButton) {
-            // Called from the play button, so call back to continue
             [sender sendActionsForControlEvents:UIControlEventPrimaryActionTriggered];
         }
     };
@@ -274,14 +456,11 @@
         return;
     }
 
-    // Remove the prefix "Demo." if there is
     BOOL isDemo = [selected[@"username"] hasPrefix:@"Demo."];
     NSMutableAttributedString *title = [[NSMutableAttributedString alloc] initWithString:[selected[@"username"] substringFromIndex:(isDemo?5:0)]];
 
-    // Check if we're switching between demo and full mode
     BOOL shouldUpdateProfiles = (getenv("DEMO_LOCK")!=NULL) != isDemo;
 
-    // Reset states
     unsetenv("DEMO_LOCK");
     setenv("POJAV_GAME_DIR", [NSString stringWithFormat:@"%s/Library/Application Support/minecraft", getenv("POJAV_HOME")].UTF8String, 1);
 
@@ -293,7 +472,6 @@
     } else if (selected[@"xboxGamertag"] == nil) {
         subtitle = localize(@"login.option.local", nil);
     } else {
-        // Display the Xbox gamertag for online accounts
         subtitle = selected[@"xboxGamertag"];
     }
 
@@ -307,29 +485,24 @@
         [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
     }
     
-    // TODO: Add caching mechanism for profile pictures
     NSURL *url = [NSURL URLWithString:[selected[@"profilePicURL"] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"]];
     UIImage *placeholder = [UIImage imageNamed:@"DefaultAccount"];
     [self.accountButton setImageForState:UIControlStateNormal withURL:url placeholderImage:placeholder];
     [self.accountButton.imageView setImageWithURL:url placeholderImage:placeholder];
     [self.accountButton sizeToFit];
 
-    // Update profiles and local version list if needed
     if (shouldUpdateProfiles) {
         [contentNavigationController fetchLocalVersionList];
         [contentNavigationController performSelector:@selector(reloadProfileList)];
     }
 
-    // Update tableView whenever we have
     UITableViewController *tableVC = contentNavigationController.viewControllers.lastObject;
     if ([tableVC isKindOfClass:UITableViewController.class]) {
         [tableVC.tableView reloadData];
     }
 }
 
-- (void)displayProgress:(NSString *)status {
-    // Remove JIT Checker
-}
+#pragma mark - AltKit JIT
 
 - (void)enableJITWithAltKit {
     [ALTServerManager.sharedManager startDiscovering];
@@ -337,18 +510,16 @@
         if (error) {
             NSLog(@"[AltKit] Could not auto-connect to server. %@", error.localizedRecoverySuggestion);
             [self displayProgress:localize(@"login.jit.fail", nil)];
-            [self displayProgress:nil];
+            return;
         }
         [connection enableUnsignedCodeExecutionWithCompletionHandler:^(BOOL success, NSError *error) {
             if (success) {
                 NSLog(@"[AltKit] Successfully enabled JIT compilation!");
                 [ALTServerManager.sharedManager stopDiscovering];
                 [self displayProgress:localize(@"login.jit.enabled", nil)];
-                [self displayProgress:nil];
             } else {
                 NSLog(@"[AltKit] Error enabling JIT: %@", error.localizedRecoverySuggestion);
                 [self displayProgress:localize(@"login.jit.fail", nil)];
-                [self displayProgress:nil];
             }
             [connection disconnect];
         }];

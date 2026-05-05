@@ -19,7 +19,7 @@ Zenith Launcher is a powerful Minecraft: Java Edition launcher for iOS and iPadO
 * **Optimized Performance** - Enhanced for jailbroken and TrollStore devices
 * **Microsoft Accounts** - Full authentication and demo mode support
 * **Modern UI** - Beautiful Liquid Glass design with custom theming
-* **REAPER2XMC Branding** - Unique visual identity and customizations
+* **TheNullAstris Branding** - Unique visual identity and customizations
 
 ---
 

@@ -58,11 +58,11 @@
     self.navigationItem.titleView = titleView;
     [titleView sizeToFit];
     
-    
+    // Menu order: Profiles → Custom Controls → Execute .jar → Settings → Send Logs
     self.options = @[
         [LauncherMenuCustomItem vcClass:LauncherProfilesViewController.class],
-        [LauncherMenuCustomItem vcClass:LauncherPreferencesViewController.class],
     ].mutableCopy;
+
     if (realUIIdiom != UIUserInterfaceIdiomTV) {
         [self.options addObject:(id)[LauncherMenuCustomItem
                                      title:localize(@"launcher.menu.custom_controls", nil)
@@ -70,14 +70,17 @@
             [contentNavigationController performSelector:@selector(enterCustomControls)];
         }]];
     }
+
     [self.options addObject:
      (id)[LauncherMenuCustomItem
           title:localize(@"launcher.menu.execute_jar", nil)
           imageName:@"MenuInstallJar" action:^{
         [contentNavigationController performSelector:@selector(enterModInstaller)];
     }]];
-    
-    // TODO: Finish log-uploading service integration
+
+    [self.options addObject:
+     (id)[LauncherMenuCustomItem vcClass:LauncherPreferencesViewController.class]];
+
     [self.options addObject:
      (id)[LauncherMenuCustomItem
           title:localize(@"login.menu.sendlogs", nil)
@@ -100,7 +103,7 @@
         activityVC.popoverPresentationController.sourceRect = titleView.bounds;
         [self presentViewController:activityVC animated:YES completion:nil];
     }]];
-    
+
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     dateFormatter.dateFormat = @"MM-dd";
     NSString* date = [dateFormatter stringFromDate:NSDate.date];
@@ -170,7 +173,6 @@
 }
 
 - (void)restoreHighlightedSelection {
-    // Restore the selected row when the view appears again
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.lastSelectedIndex inSection:0];
     [self.tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionNone];
 }
@@ -244,7 +246,6 @@
         setPrefObject(@"internal.selected_account", BaseAuthenticator.current.authData[@"username"]);
         [self updateAccountInfo];
         if (sender != self.accountButton) {
-            // Called from the play button, so call back to continue
             [sender sendActionsForControlEvents:UIControlEventPrimaryActionTriggered];
         }
     };
@@ -274,14 +275,11 @@
         return;
     }
 
-    // Remove the prefix "Demo." if there is
     BOOL isDemo = [selected[@"username"] hasPrefix:@"Demo."];
     NSMutableAttributedString *title = [[NSMutableAttributedString alloc] initWithString:[selected[@"username"] substringFromIndex:(isDemo?5:0)]];
 
-    // Check if we're switching between demo and full mode
     BOOL shouldUpdateProfiles = (getenv("DEMO_LOCK")!=NULL) != isDemo;
 
-    // Reset states
     unsetenv("DEMO_LOCK");
     setenv("POJAV_GAME_DIR", [NSString stringWithFormat:@"%s/Library/Application Support/minecraft", getenv("POJAV_HOME")].UTF8String, 1);
 
@@ -293,7 +291,6 @@
     } else if (selected[@"xboxGamertag"] == nil) {
         subtitle = localize(@"login.option.local", nil);
     } else {
-        // Display the Xbox gamertag for online accounts
         subtitle = selected[@"xboxGamertag"];
     }
 
@@ -307,20 +304,17 @@
         [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
     }
     
-    // TODO: Add caching mechanism for profile pictures
     NSURL *url = [NSURL URLWithString:[selected[@"profilePicURL"] stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"]];
     UIImage *placeholder = [UIImage imageNamed:@"DefaultAccount"];
     [self.accountButton setImageForState:UIControlStateNormal withURL:url placeholderImage:placeholder];
     [self.accountButton.imageView setImageWithURL:url placeholderImage:placeholder];
     [self.accountButton sizeToFit];
 
-    // Update profiles and local version list if needed
     if (shouldUpdateProfiles) {
         [contentNavigationController fetchLocalVersionList];
         [contentNavigationController performSelector:@selector(reloadProfileList)];
     }
 
-    // Update tableView whenever we have
     UITableViewController *tableVC = contentNavigationController.viewControllers.lastObject;
     if ([tableVC isKindOfClass:UITableViewController.class]) {
         [tableVC.tableView reloadData];

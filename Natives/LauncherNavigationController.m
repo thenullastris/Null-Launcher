@@ -216,7 +216,44 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     [self.versionPickerView selectRow:self.profileSelectedAt inComponent:0 animated:NO];
     [self pickerView:self.versionPickerView didSelectRow:self.profileSelectedAt inComponent:0];
 }
+#pragma mark - Incompatible Mod check
+-(BOOL)checkforIncompatibleMods {
+    NSString *gameDir = [NSString stringWithUTF8String:getenv("POJAV_GAME_DIR")];
+    NSString *modsPath = [gameDir stringByAppendingPathComponent:"@mods"];
+    NSFileManager *fm = [NSFileManager defaultManager];
 
+    if (![fm fileExistsAtPath:modsPath]) return NO;
+
+    NSArray *IncompatibleMods = @[
+        @"sodium", @"iris"
+    ];
+    NSArray *files = [fm contentsOfDirectoryAtPath:modsPath error:nil];
+    NSMutableArray *found = [NSMutableArray array];
+
+    for (NSString *file in files) {
+        NSString *lower = [file lowercaseString];
+        for (NSString *mod in IncompatibleMods) {
+            if ([lower containsString:mod]){
+                [found addObject:file];
+                break;
+            }
+        }
+    }
+    if (found.count == 0) return 0;
+    NSString *modList = [found componentJoinedByString:@"\n•"];
+    NSString *message = [NSString stringWithFormat:
+    @"These mods are not compatible with iOS and may crash or not work:\n\n• %\n\nContinues anyway?", modList]
+    UIAlertController *alert = [UIAlertController
+    alertControllerWithTitle:@"⚠️ Incompatible Mods"
+    message:message
+    preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Launch Anyway" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [self launchMinecraft:nil];
+    }]];
+    [self presentViewController:alert animated:YES completion:nil];
+    return YES;
 #pragma mark - Options
 - (void)enterCustomControls {
     CustomControlsViewController *vc = [[CustomControlsViewController alloc] init];
@@ -290,6 +327,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         [view performSelector:@selector(selectAccount:) withObject:sender];
         return;
     }
+    if ([self checkforIncompatibleMods]) return;
 
     [self setInteractionEnabled:NO forDownloading:YES];
 

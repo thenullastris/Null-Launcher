@@ -217,6 +217,58 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     [self pickerView:self.versionPickerView didSelectRow:self.profileSelectedAt inComponent:0];
 }
 
+#pragma mark - Incompatible Mod Check
+
+- (BOOL)checkForIncompatibleMods {
+    NSString *gameDir = [NSString stringWithUTF8String:getenv("POJAV_GAME_DIR")];
+    NSString *modsPath = [gameDir stringByAppendingPathComponent:@"mods"];
+    NSFileManager *fm = [NSFileManager defaultManager];
+
+    if (![fm fileExistsAtPath:modsPath]) return NO;
+
+    NSArray *incompatibleMods = @[
+        @"sodium",
+        @"optifine",
+        @"optifabric",
+        @"rubidium",
+        @"embeddium",
+        @"iris",
+        @"canvas"
+    ];
+
+    NSArray *files = [fm contentsOfDirectoryAtPath:modsPath error:nil];
+    NSMutableArray *found = [NSMutableArray array];
+
+    for (NSString *file in files) {
+        NSString *lower = [file lowercaseString];
+        for (NSString *mod in incompatibleMods) {
+            if ([lower containsString:mod]) {
+                [found addObject:file];
+                break;
+            }
+        }
+    }
+
+    if (found.count == 0) return NO;
+
+    NSString *modList = [found componentsJoinedByString:@"\n• "];
+    NSString *message = [NSString stringWithFormat:
+        @"These mods are not compatible with iOS and may crash or not work:\n\n• %@\n\nContinue anyway?", modList];
+
+    UIAlertController *alert = [UIAlertController
+        alertControllerWithTitle:@"⚠️ Incompatible Mods"
+        message:message
+        preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"Launch Anyway" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [self launchMinecraft:nil skipModCheck:YES];
+    }]];
+
+    [self presentViewController:alert animated:YES completion:nil];
+    return YES;
+}
+
 #pragma mark - Options
 - (void)enterCustomControls {
     CustomControlsViewController *vc = [[CustomControlsViewController alloc] init];
@@ -277,7 +329,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     UIApplication.sharedApplication.idleTimerDisabled = !enabled;
 }
 
-- (void)launchMinecraft:(UIButton *)sender {
+- (void)launchMinecraft:(UIButton *)sender skipModCheck:(BOOL)skip {
     if (!self.versionTextField.hasText) {
         [self.versionTextField becomeFirstResponder];
         return;
@@ -290,6 +342,9 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         [view performSelector:@selector(selectAccount:) withObject:sender];
         return;
     }
+
+    // Check for incompatible mods before launching
+    if (!skip && [self checkForIncompatibleMods]) return;
 
     [self setInteractionEnabled:NO forDownloading:YES];
 
@@ -346,7 +401,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         if (usesBarButtonItem) {
             sender = ((UIBarButtonItem *)sender).buttonGlassView;
         }
-        [self launchMinecraft:sender];
+        [self launchMinecraft:sender skipModCheck:NO];
     }
 }
 
@@ -482,7 +537,6 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 #pragma mark - UIPickerView stuff
 - (void)pickerView:(PLPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component {
     self.profileSelectedAt = row;
-    //((UIImageView *)self.versionTextField.leftView).image = [pickerView imageAtRow:row column:component];
     ((UIImageView *)self.versionTextField.leftView).image = [pickerView imageAtRow:row column:component];
     self.versionTextField.text = [self pickerView:pickerView titleForRow:row forComponent:component];
     PLProfiles.current.selectedProfileName = self.versionTextField.text;

@@ -262,7 +262,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
 
     [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
     [alert addAction:[UIAlertAction actionWithTitle:@"Launch Anyway" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        [self launchMinecraft:nil];
+        [self launchMinecraft:nil skipModCheck:YES];
     }]];
 
     [self presentViewController:alert animated:YES completion:nil];
@@ -329,7 +329,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     UIApplication.sharedApplication.idleTimerDisabled = !enabled;
 }
 
-- (void)launchMinecraft:(UIButton *)sender {
+- (void)launchMinecraft:(UIButton *)sender skipModCheck:(BOOL)skip {
     if (!self.versionTextField.hasText) {
         [self.versionTextField becomeFirstResponder];
         return;
@@ -344,7 +344,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     }
 
     // Check for incompatible mods before launching
-    if ([self checkForIncompatibleMods]) return;
+    if (!skip && [self checkForIncompatibleMods]) return;
 
     [self setInteractionEnabled:NO forDownloading:YES];
 
@@ -401,7 +401,7 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         if (usesBarButtonItem) {
             sender = ((UIBarButtonItem *)sender).buttonGlassView;
         }
-        [self launchMinecraft:sender];
+        [self launchMinecraft:sender skipModCheck:NO];
     }
 }
 

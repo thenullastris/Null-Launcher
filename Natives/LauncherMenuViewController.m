@@ -235,6 +235,8 @@
         setPrefObject(@"internal.selected_account", BaseAuthenticator.current.authData[@"username"]);
         [self updateAccountInfo];
     };
+    vc.navigationItem.leftBarButtonItem = self.splitViewController.displayModeButtonItem;
+    vc.navigationItem.leftItemsSupplementBackButton = YES;
     [contentNavigationController pushViewController:vc animated:YES];
 }
 

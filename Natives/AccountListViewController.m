@@ -97,6 +97,8 @@
     nameLabel.text = displayName;
     nameLabel.font = [UIFont boldSystemFontOfSize:17];
     nameLabel.textColor = [UIColor whiteColor];
+    nameLabel.adjustsFontSizeToFitWidth = YES;
+    nameLabel.minimumScaleFactor = 0.7;
     nameLabel.translatesAutoresizingMaskIntoConstraints = NO;
     [rightPanel addSubview:nameLabel];
 
@@ -160,9 +162,10 @@
     }
 
     if (indexPath.row == self.accountList.count) {
-        cell.imageView.image = [UIImage imageNamed:@"IconAdd"];
-        cell.textLabel.text = localize(@"login.option.add", nil);
-        return cell;
+    cell.imageView.image = [UIImage imageNamed:@"IconAdd"];
+    cell.textLabel.text = localize(@"login.option.add", nil);
+    cell.detailTextLabel.text = @"";
+    return cell;
     }
 
     NSDictionary *selected = self.accountList[indexPath.row];

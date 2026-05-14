@@ -52,7 +52,8 @@
     CGFloat totalHeight = 160.0;
     CGFloat leftWidth = 130.0;
 
-    UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.tableView.bounds.size.width, totalHeight)];
+    CGFloat fullWidth = self.splitViewController.view.bounds.size.width - self.splitViewController.primaryColumnWidth;
+    UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, fullWidth, totalHeight)];
     container.backgroundColor = [UIColor colorWithWhite:0.07 alpha:1.0];
 
     UIView *leftPanel = [[UIView alloc] initWithFrame:CGRectMake(0, 0, leftWidth, totalHeight)];
@@ -86,7 +87,7 @@
 
     [container addSubview:leftPanel];
 
-    UIView *rightPanel = [[UIView alloc] initWithFrame:CGRectMake(leftWidth, 0, self.tableView.bounds.size.width - leftWidth, totalHeight)];
+    UIView *rightPanel = [[UIView alloc] initWithFrame:CGRectMake(leftWidth, 0, fullWidth - leftWidth, totalHeight)];
     rightPanel.backgroundColor = [UIColor clearColor];
 
     NSString *displayName = authData[@"username"];
@@ -142,7 +143,7 @@
 
     [container addSubview:rightPanel];
 
-    UIView *bottomLine = [[UIView alloc] initWithFrame:CGRectMake(0, totalHeight - 1, self.tableView.bounds.size.width, 1)];
+    UIView *bottomLine = [[UIView alloc] initWithFrame:CGRectMake(0, totalHeight - 1, fullWidth, 1)];
     bottomLine.backgroundColor = [UIColor colorWithWhite:0.1 alpha:1.0];
     [container addSubview:bottomLine];
 

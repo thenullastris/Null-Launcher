@@ -1,0 +1,206 @@
+name: Build Mesa Zink for iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      mesa_version:
+        description: 'Mesa version tag (e.g. mesa-25.1.0)'
+        required: false
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout Zenith Launcher
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install meson ninja python3 bison flex llvm glslang spirv-tools spirv-cross pkg-config cmake
+          echo "LLVM and bison added to PATH"
+          echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
+          echo "/opt/homebrew/opt/bison/bin" >> $GITHUB_PATH
+
+      - name: Set up Python packaging
+        run: pip3 install mako packaging
+
+      - name: Get MoltenVK path
+        run: |
+          # Use the MoltenVK already in the repo (Frameworks/)
+          MOLTENVK_DIR="${{ github.workspace }}/Natives/resources/Frameworks"
+          echo "MOLTENVK_DIR=$MOLTENVK_DIR" >> $GITHUB_ENV
+          echo "Using MoltenVK from: $MOLTENVK_DIR"
+
+      - name: Clone Mesa
+        run: |
+          if [ "${{ inputs.mesa_version }}" = "main" ]; then
+            git clone --depth=1 https://gitlab.freedesktop.org/mesa/mesa.git mesa-src
+          else
+            git clone --depth=1 --branch ${{ inputs.mesa_version }} https://gitlab.freedesktop.org/mesa/mesa.git mesa-src
+          fi
+          cd mesa-src
+          echo "Mesa commit: $(git log --oneline -1)"
+
+      - name: Set up iOS cross-compile file
+        run: |
+          SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          CLANG=$(xcrun --sdk iphoneos --find clang)
+          CLANGPP=$(xcrun --sdk iphoneos --find clang++)
+          AR=$(xcrun --sdk iphoneos --find ar)
+          STRIP=$(xcrun --sdk iphoneos --find strip)
+
+          echo "SDK_PATH=$SDK_PATH" >> $GITHUB_ENV
+
+          cat > ios-cross.ini << EOF
+          [binaries]
+          c = '$CLANG'
+          cpp = '$CLANGPP'
+          ar = '$AR'
+          strip = '$STRIP'
+          pkg-config = 'pkg-config'
+          bison = '/opt/homebrew/opt/bison/bin/bison'
+          flex = '/opt/homebrew/opt/flex/bin/flex'
+
+          [built-in options]
+          c_args = ['-arch', 'arm64', '-target', 'arm64-apple-ios14.0', '-isysroot', '$SDK_PATH', '-mios-version-min=14.0']
+          cpp_args = ['-arch', 'arm64', '-target', 'arm64-apple-ios14.0', '-isysroot', '$SDK_PATH', '-mios-version-min=14.0']
+          c_link_args = ['-arch', 'arm64', '-target', 'arm64-apple-ios14.0', '-isysroot', '$SDK_PATH', '-mios-version-min=14.0']
+          cpp_link_args = ['-arch', 'arm64', '-target', 'arm64-apple-ios14.0', '-isysroot', '$SDK_PATH', '-mios-version-min=14.0']
+
+          [host_machine]
+          system = 'darwin'
+          cpu_family = 'aarch64'
+          cpu = 'arm64'
+          endian = 'little'
+
+          [properties]
+          sys_root = '$SDK_PATH'
+          EOF
+
+          cat ios-cross.ini
+
+      - name: Configure Mesa with Meson
+        run: |
+          cd mesa-src
+
+          # Native file so meson can run host tools (bison etc)
+          cat > native.ini << 'EOF'
+          [binaries]
+          bison = '/opt/homebrew/opt/bison/bin/bison'
+          flex = '/opt/homebrew/opt/flex/bin/flex'
+          EOF
+
+          meson setup build \
+            --cross-file ../ios-cross.ini \
+            --native-file native.ini \
+            --prefix=${{ github.workspace }}/mesa-install \
+            --buildtype=release \
+            -Dplatforms='' \
+            -Degl=enabled \
+            -Dgles1=enabled \
+            -Dgles2=enabled \
+            -Dosmesa=true \
+            -Dgallium-drivers=zink \
+            -Dvulkan-drivers='' \
+            -Dglx=disabled \
+            -Dgbm=disabled \
+            -Dllvm=disabled \
+            -Dshared-llvm=disabled \
+            -Dlibunwind=disabled \
+            -Dvalgrind=disabled \
+            -Dgallium-va=disabled \
+            -Dgallium-vdpau=disabled \
+            -Dgallium-opencl=disabled \
+            -Dmoltenvk-dir="${{ env.MOLTENVK_DIR }}" \
+            2>&1 | tee meson-configure.log
+
+      - name: Build Mesa
+        run: |
+          cd mesa-src
+          ninja -C build -j$(sysctl -n hw.logicalcpu) 2>&1 | tee build.log
+
+      - name: Install Mesa
+        run: |
+          cd mesa-src
+          ninja -C build install
+
+      - name: Collect dylibs
+        run: |
+          INSTALL_DIR="${{ github.workspace }}/mesa-install"
+          OUTPUT_DIR="${{ github.workspace }}/mesa-output"
+          mkdir -p $OUTPUT_DIR
+
+          echo "=== Installed files ==="
+          find $INSTALL_DIR -name "*.dylib" | sort
+
+          # Copy the key libs
+          # libOSMesa = the Zink renderer
+          # libglapi   = Mesa's GL API layer (required companion)
+          for lib in libOSMesa libglapi libEGL libGL libGLESv1_CM libGLESv2; do
+            found=$(find $INSTALL_DIR -name "${lib}*.dylib" | head -1)
+            if [ -n "$found" ]; then
+              echo "Found: $found"
+              cp "$found" $OUTPUT_DIR/
+            fi
+          done
+
+          # Rename to match what Zenith expects
+          cd $OUTPUT_DIR
+          # libOSMesa.X.dylib -> libOSMesa.8.dylib (keep soname Zenith loads)
+          for f in libOSMesa.*.dylib; do
+            if [ "$f" != "libOSMesa.8.dylib" ]; then
+              cp "$f" libOSMesa.8.dylib
+              echo "Renamed $f -> libOSMesa.8.dylib"
+            fi
+          done
+
+          echo "=== Output files ==="
+          ls -lh $OUTPUT_DIR/
+
+      - name: Fix dylib install names for iOS embedding
+        run: |
+          OUTPUT_DIR="${{ github.workspace }}/mesa-output"
+          cd $OUTPUT_DIR
+
+          for dylib in *.dylib; do
+            echo "Fixing: $dylib"
+            # Change install name to @rpath so iOS can find it in Frameworks/
+            install_name_tool -id "@rpath/$dylib" "$dylib" || true
+
+            # Fix any internal references between mesa libs
+            for dep in *.dylib; do
+              old_path=$(otool -L "$dylib" | grep "$dep" | awk '{print $1}' || true)
+              if [ -n "$old_path" ] && [ "$old_path" != "@rpath/$dep" ]; then
+                install_name_tool -change "$old_path" "@rpath/$dep" "$dylib" || true
+              fi
+            done
+
+            # Sign with ldid (no entitlements needed for dylibs)
+            ldid -S "$dylib" || true
+          done
+
+          echo "=== Final dylibs ==="
+          for f in *.dylib; do
+            echo "--- $f ---"
+            otool -L "$f" | head -10
+          done
+
+      - name: Upload Mesa dylibs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mesa-zink-ios-arm64
+          path: ${{ github.workspace }}/mesa-output/*.dylib
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            mesa-src/meson-configure.log
+            mesa-src/build/meson-logs/
+          retention-days: 7

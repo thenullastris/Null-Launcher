@@ -25,7 +25,8 @@ jobs:
           echo "/opt/homebrew/opt/bison/bin" >> $GITHUB_PATH
 
       - name: Set up Python packaging
-        run: pip3 install mako packaging
+        run: pip3 install mako packaging --break-system-packages
+
 
       - name: Get MoltenVK path
         run: |

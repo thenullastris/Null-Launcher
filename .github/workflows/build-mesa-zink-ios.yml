@@ -55,11 +55,14 @@ jobs:
          [binaries]
          c = '$CLANG'
          cpp = '$CLANGPP'
+         objc = '$CLANG'
+         objcpp = '$CLANGPP'
          ar = '$AR'
          strip = '$STRIP'
          pkg-config = 'pkg-config'
          bison = '/opt/homebrew/opt/bison/bin/bison'
          flex = '/opt/homebrew/opt/flex/bin/flex'
+
 
          [built-in options]
          c_args = ['-arch', 'arm64', '-target', 'arm64-apple-ios14.0', '-isysroot', '$SDK_PATH', '-mios-version-min=14.0']
